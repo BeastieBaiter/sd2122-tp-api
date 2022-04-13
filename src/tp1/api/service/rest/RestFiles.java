@@ -15,6 +15,9 @@ import jakarta.ws.rs.core.MediaType;
 public interface RestFiles {
 
 	static final String PATH="/files";
+	public static final String QUERY = "query";
+	public static final String USER_ID = "userId";
+	public static final String PASSWORD = "password";
 
 	/**
 	 * Write a file. If the file exists, overwrites the contents.

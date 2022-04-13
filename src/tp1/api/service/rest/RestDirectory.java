@@ -17,6 +17,9 @@ import tp1.api.FileInfo;
 public interface RestDirectory {
 
 	static final String PATH="/dir";
+	public static final String QUERY = "query";
+	public static final String USER_ID = "userId";
+	public static final String PASSWORD = "password";
 
 	/**
 	 * Write a new version of a file. If the file exists, its contents are overwritten.

@@ -106,8 +106,8 @@ public class UsersResource implements RestUsers {
 		Log.info("deleteUser : user = " + userId + "; pwd = " + password);
 		// TODO Complete method
 		// Check if user is valid
-		if(userId == null || password == null) {
-			Log.info("UserId or passwrod null.");
+		if(userId == null) {
+			Log.info("UserId is null.");
 			throw new WebApplicationException( Status.BAD_REQUEST );
 		}
 		
@@ -142,10 +142,7 @@ public class UsersResource implements RestUsers {
 				u.setPassword(pwd);
 			}
 		}
-		if (userSearch.isEmpty())
-			throw new WebApplicationException( Status.BAD_REQUEST );
-		else
-			return userSearch;
+		return userSearch;
 	}
 
 }

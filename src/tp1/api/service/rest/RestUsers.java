@@ -17,7 +17,10 @@ import tp1.api.User;
 @Path(RestUsers.PATH)
 public interface RestUsers {
 
-	static final String PATH="/users";
+	public static final String PATH="/users";
+	public static final String QUERY = "query";
+	public static final String USER_ID = "userId";
+	public static final String PASSWORD = "password";
 
 	/**
 	 * Creates a new user.

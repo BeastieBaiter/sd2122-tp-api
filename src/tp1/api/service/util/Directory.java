@@ -17,12 +17,13 @@ public interface Directory {
 	 * @param userId - id of the user.
 	 * @param password - the password of the user.
 	 * 
-	 * @return OK if success + FileInfo representing the file.
-	 *	   NOT_FOUND if the userId does not exist.
-	 *         FORBIDDEN if the password is incorrect.
-	 * 	   BAD_REQUEST otherwise.
+	 * @return 200 if success + FileInfo representing the file.
+	 *		   404 if the userId does not exist.
+	 *         403 if the password is incorrect.
+	 * 		   400 otherwise.
 	 */
-	Result<FileInfo> writeFile(String filename, byte []data, String userId, String password);
+	FileInfo writeFile(String filename, byte []data, 
+			String userId, String password);
 
 	/**
 	 * Delete an existing file ("userId/filename"). 
@@ -32,12 +33,13 @@ public interface Directory {
 	 * @param userId - id of the user.
 	 * @param password - the password of the user.
 	 * 
-	 * @return OK if success; 
-	 *	   NOT_FOUND if the userId or filename does not exist.
-	 *         FORBIDDEN if the password is incorrect.
-	 * 	   BAD_REQUEST otherwise.
+	 * @return 204 if success; 
+	 *		   404 if the userId or filename does not exist.
+	 *         403 if the password is incorrect.
+	 * 		   400 otherwise.
 	 */
-	Result<Void> deleteFile(String filename, String userId, String password);
+	void deleteFile(String filename, 
+			String userId, String password);
 
 	/**
 	 * Share the file "userId/filename" with another user. 
@@ -52,12 +54,13 @@ public interface Directory {
 	 * @param userIdShare - id of the user to share the file with.
 	 * @param password - the password of the user.
 	 * 
-	 * @return OK if success; 
-	 *.        NOT_FOUND if the userId or userIdShare or filename does not exist.
-	 *         FORBIDDEN if the password is incorrect.
-	 * 	   BAD_REQUEST otherwise.
+	 * @return 204 if success; 
+	 *		   404 if the userId or userIdShare or filename does not exist.
+	 *         403 if the password is incorrect.
+	 * 		   400 otherwise.
 	 */
-	Result<Void> shareFile(String filename, String userId, String userIdShare, String password);
+	Result<Void> shareFile(String filename, String userId, 
+			String userIdShare, String password);
 
 	/**
 	 * Unshare the file "userId/filename" with another user. 
@@ -72,12 +75,13 @@ public interface Directory {
 	 * @param userIdShare - id of the user to unshare the file with.
 	 * @param password - the password of the user.
 	 * 
-	 * @return OK if success; 
-	 *	   NOT_FOUND if the userId or userIdShare or filename does not exist.
-	 *         FORBIDDEN if the password is incorrect.
-	 *         BAD_REQUEST otherwise.
+	 * @return 204 if success; 
+	 *		   404 if the userId or userIdShare or filename does not exist.
+	 *         403 if the password is incorrect.
+	 * 		   400 otherwise.
 	 */
-	Result<Void> unshareFile(String filename, String userId, String userIdShare, String password);
+	Result<Void> unshareFile(String filename, String userId, 
+			String userIdShare, String password);
 
 	/**
 	 * Get the contents of the file "userId/filename". 
@@ -90,12 +94,13 @@ public interface Directory {
 	 * @param accUserId - id of the user executing the operation.
 	 * @param password - the password of accUserId.
 	 * 
-	 * @return OK if success + contents (through redirect to the File server); 
-	 *.        NOT_FOUND if the userId or filename or accUserId does not exist.
-	 *         FORBIDDEN if the password is incorrect or the user cannot access the file.
-	 * 	   BAD_REQUEST otherwise.
+	 * @return 200 if success + contents (through redirect to the File server); 
+	 *		   404 if the userId or filename or accUserId does not exist.
+	 *         403 if the password is incorrect or the user cannot access the file.
+	 * 		   400 otherwise.
 	 */
-	Result<byte[]> getFile(String filename, String userId, String accUserId, String password);
+	Result<byte[]> getFile(String filename, String userId, 
+			String accUserId, String password);
 
 	/**
 	 * List the files a given user ("userId") has access to - this includes both its own files
@@ -104,10 +109,13 @@ public interface Directory {
 	 * @param userId - id of the user.
 	 * @param password - the password of the user.
 	 * 
-	 * @return OK if success + list of FileInfo; 
-	 *	   NOT_FOUND if the userId does not exist.
-	 *         FORBIDDEN if the password is incorrect.
-	 *         BAD_REQUEST otherwise.
+	 * @return 200 if success + list of FileInfo; 
+	 *		   404 if the userId does not exist.
+	 *         403 if the password is incorrect.
+	 * 		   400 otherwise.
 	 */
 	Result<List<FileInfo>> lsFile(String userId, String password);
+
+
+
 }

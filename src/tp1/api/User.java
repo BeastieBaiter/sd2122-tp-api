@@ -95,6 +95,16 @@ public class User {
 		this.password = password;
 	}
 
+	public void updateUser(User user) {
+		if (user.getFullName() != null)
+			this.fullName = user.getFullName();
+		if (user.getEmail() != null)
+			this.email = user.getEmail();
+		if (user.getPassword() != null)
+			this.password = user.getPassword();
+		
+	}	
+	
 	@Override
 	public String toString() {
 		return "User [email=" + email + ", userId=" + userId + ", fullName=" + fullName + ", password=" + password

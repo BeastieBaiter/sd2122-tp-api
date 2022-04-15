@@ -49,7 +49,7 @@ public class DirectoriesResource implements RestDirectory{
 		String[] filesUris = getFilesUris();
 		String fileUri = filesUris[(int) (Math.random() * filesUris.length)];
 		
-		FileInfo fileInfo = new FileInfo(userId, filename, fileUri + "/" + userId + "/" + "filename", sharedWith);
+		FileInfo fileInfo = new FileInfo(userId, filename, fileUri + "/" + userId + "/" + filename, sharedWith);
 		files.put(filename, fileInfo);
 		
 		/*Client client = ClientBuilder.newClient();

@@ -37,7 +37,7 @@ public class Discovery {
 	
 	
 	// The pre-aggreed multicast endpoint assigned to perform discovery. 
-	static final InetSocketAddress DISCOVERY_ADDR = new InetSocketAddress("227.227.227.227", 2277);
+	static final InetSocketAddress DISCOVERY_ADDR = new InetSocketAddress("226.226.226.226", 2266);
 	static final int DISCOVERY_PERIOD = 1000;
 	static final int DISCOVERY_TIMEOUT = 5000;
 
@@ -151,12 +151,19 @@ public class Discovery {
 	 * 
 	 * @param  serviceName the name of the service being discovered
 	 * @return an array of URI with the service instances discovered. 
+	 * @throws InterruptedException 
 	 * 
 	 */
-	public URI[] knownUrisOf(String serviceName) {
-		var map = info.get(serviceName);
-		URI[] uris = (URI[]) map.keySet().toArray();
-		return uris;
+	public URI[] knownUrisOf(String serviceName) throws Exception {
+		while (true) {
+            var map = info.get(serviceName);
+            if (map != null) {
+                URI[] uris = map.keySet().toArray(new URI[1000]);
+                return uris;
+            } else {
+                Thread.sleep(DISCOVERY_PERIOD);
+            }
+        }
 	}	
 	
 	private void joinGroupInAllInterfaces(MulticastSocket ms) throws SocketException {
@@ -170,23 +177,10 @@ public class Discovery {
 			}
 		}
 	}	
-
-	/**
-	 * Starts sending service announcements at regular intervals... 
-	 */
-	public void startAnnounce() {
-		announce(serviceName, serviceURI);
-	}
 	
-	public void startListener() {
+	public void start() {
+		announce(serviceName, serviceURI);
 		listener();
 	}
 
-	// Main just for testing purposes
-	/*
-	public static void main( String[] args) throws Exception {
-		Discovery discovery = new Discovery("test", "http://" + InetAddress.getLocalHost().getHostAddress());
-		discovery.start();
-	}
-	*/
 }

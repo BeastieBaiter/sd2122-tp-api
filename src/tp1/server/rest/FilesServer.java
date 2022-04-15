@@ -8,20 +8,20 @@ import org.glassfish.jersey.jdkhttp.JdkHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import tp1.discovery.Discovery;
-import tp1.server.resources.rest.UsersResource;
+import tp1.server.resources.rest.FilesResource;
 import util.CustomLoggingFilter;
 import util.GenericExceptionMapper;
 
-public class UsersServer {
+public class FilesServer {
 
-	private static Logger Log = Logger.getLogger(UsersServer.class.getName());
+	private static Logger Log = Logger.getLogger(DirectoriesServer.class.getName());
 
 	static {
 		System.setProperty("java.net.preferIPv4Stack", "true");
 	}
 	
 	public static final int PORT = 8080;
-	public static final String SERVICE = "users";
+	public static final String SERVICE = "files";
 	private static final String SERVER_URI_FMT = "http://%s:%s/rest";
 	
 	public static void main(String[] args) {
@@ -29,7 +29,7 @@ public class UsersServer {
 			//Debug.setLogLevel( Level.INFO, Debug.SD2122 );
 			
 		ResourceConfig config = new ResourceConfig();
-		config.register(UsersResource.class);
+		config.register(FilesResource.class);
 		config.register(CustomLoggingFilter.class);
 		config.register(GenericExceptionMapper.class);
 		
@@ -47,5 +47,5 @@ public class UsersServer {
 		} catch( Exception e) {
 			Log.severe(e.getMessage());
 		}
-	}	
+	}
 }

@@ -1,0 +1,3 @@
+cd C:\Users\joaov\Documents\GitHub\sd2122-tp-api 
+mvn clean compile assembly:single docker:build
+test-sd-tp1.bat -image sd2122-tp1-47697-56971 -sleep 2 -test 4a

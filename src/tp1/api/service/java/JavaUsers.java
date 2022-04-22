@@ -111,21 +111,18 @@ public class JavaUsers implements Users{
 		Result<List<FileInfo>> resultListOfFiles = rdc.lsFile(userId, password);
 		System.out.println(resultListOfFiles.toString());
 		
-		if (!resultListOfFiles.isOK()) {
-			return Result.error(resultListOfFiles.error());
-		}
-		
-		Iterator<FileInfo> it = resultListOfFiles.value().iterator();
-		while(it.hasNext()) {
-			FileInfo f = it.next();
-			if (f.getOwner().equals(userId)) {
-				rdc.deleteFile(f.getFilename(), userId, password);
-				System.out.println("USER FILE DELETE");
-			}
-			else {
-				Set<String> sharedWith = f.getSharedWith();
-				sharedWith.remove(userId);
-				f.setSharedWith(sharedWith);
+		if (resultListOfFiles.isOK()) {
+			Iterator<FileInfo> it = resultListOfFiles.value().iterator();
+			while(it.hasNext()) {
+				FileInfo f = it.next();
+				if (f.getOwner().equals(userId)) {
+					rdc.deleteFile(f.getFilename(), userId, password);
+				}
+				else {
+					Set<String> sharedWith = f.getSharedWith();
+					sharedWith.remove(userId);
+					f.setSharedWith(sharedWith);
+				}
 			}
 		}
 		

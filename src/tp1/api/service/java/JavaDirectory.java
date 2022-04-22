@@ -30,6 +30,8 @@ public class JavaDirectory implements Directory{
 	
 	private final Map<String, FileInfo> files = new HashMap<>();
 	
+	private final Map<URI, Integer> fileServerCount = new HashMap<>();
+	
 	public JavaDirectory() {}
 
 	@Override
@@ -41,8 +43,10 @@ public class JavaDirectory implements Directory{
 		
 		Set<String> sharedWith = new HashSet<String>();
 		
-		URI fileUri = getUris("files")[0];
-		String fileUriString ="http://" + fileUri.getHost() + ":" + fileUri.getPort() + fileUri.getPath();
+		URI[] fileUris = getUris("files");
+		URI fileUri = chooseFileServer(fileUris);
+		
+		String fileUriString = "http://" + fileUri.getHost() + ":" + fileUri.getPort() + fileUri.getPath();
 		
 		RestFilesClient rfc = new RestFilesClient(fileUri); 
 		
@@ -51,6 +55,8 @@ public class JavaDirectory implements Directory{
 		files.put(userId + "_" + filename, fileInfo);
 		
 		rfc.writeFile(userId + "_" + filename, data, "");
+		
+		fileServerCount.merge(fileUri, 1, (a,b) -> a + b);
 		
 		return fileInfo;
 	}
@@ -66,11 +72,17 @@ public class JavaDirectory implements Directory{
 			throw new WebApplicationException(Status.NOT_FOUND);
 		}
 		
+		FileInfo f = files.get(userId + "_" + filename);
+		
+		URI fileUri = URI.create(f.getFileURL().replace( RestFiles.PATH + "/" + userId + "_" + filename, ""));
+		
+		RestFilesClient rfc = new RestFilesClient(fileUri); 
+		
 		files.remove(userId + "_" + filename);
 		
-		URI fileUri = getUris("files")[0];
-		RestFilesClient rfc = new RestFilesClient(fileUri); 
 		rfc.deleteFile(userId + "_" + filename, "");
+		
+		fileServerCount.merge(fileUri, 1, (a,b) -> a - b);
 		
 	}
 
@@ -93,6 +105,7 @@ public class JavaDirectory implements Directory{
 		FileInfo file = files.get(userId + "_" + filename);
 		Set<String> sharedWith = file.getSharedWith();
 		sharedWith.add(userIdShare);
+		System.out.println(sharedWith);
 		file.setSharedWith(sharedWith);
 		
 		return Result.ok();
@@ -165,6 +178,23 @@ public class JavaDirectory implements Directory{
 		}
 		
 		return Result.ok(userFiles);
+	}
+	
+	private URI chooseFileServer(URI[] uris) {
+		URI result = null;
+		int best = Integer.MAX_VALUE;
+		for(URI uri : uris) {
+			int count;
+			if (!fileServerCount.containsKey(uri))
+				count = 0;
+			else
+				count = fileServerCount.get(uri);
+			if (count < best) {
+				best = count;
+				result = uri;
+			}
+		}
+		return result;
 	}
 	
 	private URI[] getUris(String service) {

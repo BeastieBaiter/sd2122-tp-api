@@ -155,16 +155,21 @@ public class Discovery {
 	 * 
 	 */
 	public URI[] knownUrisOf(String serviceName) throws Exception {
-		while (true) {
+        while (true) {
+            int timeoutCount = 0;
             var map = info.get(serviceName);
             if (map != null) {
-                URI[] uris = map.keySet().toArray(new URI[1000]);
-                return uris;
+                URI[] uris = new URI[map.keySet().size()];
+                return map.keySet().toArray(uris);
             } else {
-                Thread.sleep(DISCOVERY_PERIOD);
+                if (timeoutCount >= 4)
+                    return null;
+                else
+                    Thread.sleep(DISCOVERY_PERIOD);
+                timeoutCount++;
             }
         }
-	}	
+    }   
 	
 	private void joinGroupInAllInterfaces(MulticastSocket ms) throws SocketException {
 		Enumeration<NetworkInterface> ifs = NetworkInterface.getNetworkInterfaces();

@@ -108,7 +108,7 @@ public class RestDirectoryClient extends RestClient implements Directory {
 		Response r = target.path(userId).path(filename).path("/share").path(userIdShare)
 				.queryParam(RestUsers.PASSWORD, password).request()
 				.accept(MediaType.APPLICATION_JSON)
-				.post(Entity.entity(null, MediaType.APPLICATION_JSON));
+				.post(Entity.entity(Void.class, MediaType.APPLICATION_JSON));
 		
 		int status = r.getStatus();
 		

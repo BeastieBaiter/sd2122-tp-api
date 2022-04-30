@@ -1,5 +1,5 @@
 cd C:\Users\joaov\Documents\GitHub\sd2122-tp-api 
 mvn clean compile assembly:single docker:build
-test-sd-tp1.bat -image sd2122-tp1-47697-56971 -sleep 2 -test 4e
+test-sd-tp1.bat -image sd2122-tp1-47697-56971 -sleep 5 -test 10
 
-test-sd-tp1.bat -image sd2122-tp1-47697-56971 -sleep 2 -test 4e > C:\Users\joaov\Documents\GitHub\sd2122-tp-api\output.txt
+test-sd-tp1.bat -image sd2122-tp1-47697-56971 -sleep 2 -test 9 > C:\Users\joaov\Documents\GitHub\sd2122-tp-api\output.txt

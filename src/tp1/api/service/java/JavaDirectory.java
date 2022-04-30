@@ -9,17 +9,11 @@ import java.util.Map;
 import java.util.Set;
 
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
 import tp1.api.FileInfo;
-import tp1.api.User;
 import tp1.api.service.rest.RestFiles;
 import tp1.api.service.util.Directory;
 import tp1.api.service.util.Result;
 import tp1.api.service.util.Result.ErrorCode;
-import tp1.clients.rest.RestFilesClient;
-import tp1.clients.rest.RestUsersClient;
 import tp1.discovery.Discovery;
 import tp1.server.rest.DirectoryServer;
 
@@ -36,11 +30,6 @@ public class JavaDirectory implements Directory{
 
 	@Override
 	public FileInfo writeFile(String filename, byte[] data, String userId, String password) {
-		var resultUser = getUser(userId, password);
-		if (!resultUser.isOK()) {
-			throw new WebApplicationException(convertToStatus(resultUser.error()));
-		}
-		
 		Set<String> sharedWith = new HashSet<String>();
 		
 		URI[] fileUris = getUris("files");
@@ -48,133 +37,102 @@ public class JavaDirectory implements Directory{
 		
 		String fileUriString = "http://" + fileUri.getHost() + ":" + fileUri.getPort() + fileUri.getPath();
 		
-		RestFilesClient rfc = new RestFilesClient(fileUri); 
+		FileInfo fileInfo;
 		
-		FileInfo fileInfo = new FileInfo(userId, filename, 
-										fileUriString + RestFiles.PATH + "/" + userId + "_" + filename, sharedWith);
-		files.put(userId + "_" + filename, fileInfo);
-		
-		rfc.writeFile(userId + "_" + filename, data, "");
-		
-		fileServerCount.merge(fileUri, 1, (a,b) -> a + b);
-		
+		synchronized (this) {
+			if (files.containsKey(userId + "_" + filename)) {
+				fileInfo = files.get(userId + "_" + filename);
+			}
+			else {
+				fileInfo = new FileInfo(userId, filename, 
+						fileUriString + RestFiles.PATH + "/" + userId + "_" + filename, sharedWith);
+				
+				files.put(userId + "_" + filename, fileInfo);
+			}
+
+			fileServerCount.merge(fileUri, 1, (a, b) -> a + b);
+		}
+
 		return fileInfo;
 	}
 
 	@Override
 	public void deleteFile(String filename, String userId, String password) {
-		var resultUser = getUser(userId, password);
-		if (!resultUser.isOK()) {
-			throw new WebApplicationException(convertToStatus(resultUser.error()));
+		synchronized (this) {
+			FileInfo f = files.get(userId + "_" + filename);
+
+			URI fileUri = URI.create(f.getFileURL().replace(RestFiles.PATH + "/" + userId + "_" + filename, ""));
+
+			files.remove(userId + "_" + filename);
+
+			fileServerCount.merge(fileUri, 1, (a, b) -> a - b);
 		}
-		
-		if (!files.containsKey(userId + "_" + filename)) {
-			throw new WebApplicationException(Status.NOT_FOUND);
-		}
-		
-		FileInfo f = files.get(userId + "_" + filename);
-		
-		URI fileUri = URI.create(f.getFileURL().replace( RestFiles.PATH + "/" + userId + "_" + filename, ""));
-		
-		RestFilesClient rfc = new RestFilesClient(fileUri); 
-		
-		files.remove(userId + "_" + filename);
-		
-		rfc.deleteFile(userId + "_" + filename, "");
-		
-		fileServerCount.merge(fileUri, 1, (a,b) -> a - b);
 		
 	}
 
 	@Override
 	public Result<Void> shareFile(String filename, String userId, String userIdShare, String password) {
-		var resultUser = getUser(userId, password);
-		if (!resultUser.isOK()) {
-			return Result.error(resultUser.error());
+		synchronized (this) {
+			if (!files.containsKey(userId + "_" + filename)) {
+				return Result.error(ErrorCode.NOT_FOUND);
+			}
+
+			FileInfo file = files.get(userId + "_" + filename);
+
+			Set<String> sharedWith = file.getSharedWith();
+			sharedWith.add(userIdShare);
+			System.out.println("Share With " + sharedWith);
+			file.setSharedWith(sharedWith);
 		}
-		
-		if (!files.containsKey(userId + "_" + filename)) {
-			return Result.error(ErrorCode.NOT_FOUND);
-		}
-		
-		var resultHasUser = hasUser(userIdShare);
-		if (!resultHasUser.isOK()) {
-			return Result.error(resultHasUser.error());
-		}
-		
-		FileInfo file = files.get(userId + "_" + filename);
-		Set<String> sharedWith = file.getSharedWith();
-		sharedWith.add(userIdShare);
-		System.out.println(sharedWith);
-		file.setSharedWith(sharedWith);
 		
 		return Result.ok();
 	}
 
 	@Override
 	public Result<Void> unshareFile(String filename, String userId, String userIdShare, String password) {
-		var resultUser = getUser(userId, password);
-		if (!resultUser.isOK()) {
-			return Result.error(resultUser.error());
+		synchronized (this) {
+			if (!files.containsKey(userId + "_" + filename)) {
+				return Result.error(ErrorCode.NOT_FOUND);
+			}
+			
+			FileInfo file = files.get(userId + "_" + filename);
+			Set<String> sharedWith = file.getSharedWith();
+			sharedWith.remove(userIdShare);
+			file.setSharedWith(sharedWith);
 		}
-		
-		if (!files.containsKey(userId + "_" + filename)) {
-			return Result.error(ErrorCode.NOT_FOUND);
-		}
-		
-		var resultHasUser = hasUser(userIdShare);
-		if (!resultHasUser.isOK()) {
-			return Result.error(resultHasUser.error());
-		}
-		FileInfo file = files.get(userId + "_" + filename);
-		Set<String> sharedWith = file.getSharedWith();
-		sharedWith.remove(userIdShare);
-		file.setSharedWith(sharedWith);
-		
 		return Result.ok();
 	}
 
 	@Override
 	public Result<byte[]> getFile(String filename, String userId, String accUserId, String password) {
-		var resultUser = getUser(accUserId, password);
-		if (!resultUser.isOK()) {
-			return Result.error(resultUser.error());
-		}
-		
-		if (!files.containsKey(userId + "_" + filename)) {
-			return Result.error(ErrorCode.NOT_FOUND);
-		}
-		
-		var resultHasUser = hasUser(userId);
-		if (!resultHasUser.isOK()) {
-			return Result.error(resultHasUser.error());
+		synchronized (this) {
+			if (!files.containsKey(userId + "_" + filename)) {
+				return Result.error(ErrorCode.NOT_FOUND);
+			}
 
+			FileInfo f = files.get(userId + "_" + filename);
+
+			if (!f.getSharedWith().contains(accUserId) && !accUserId.equals(f.getOwner())) {
+				return Result.error(ErrorCode.FORBIDDEN);
+			}
+
+			return Result.ok();
 		}
-		
-		FileInfo f = files.get(userId + "_" + filename);
-		
-		if (!f.getSharedWith().contains(accUserId) && !accUserId.equals(f.getOwner())) {
-			return Result.error(ErrorCode.FORBIDDEN);
-		}
-		
-		throw new WebApplicationException(Response.temporaryRedirect(URI.create(f.getFileURL())).build());
 	}
 
 	@Override
 	public Result<List<FileInfo>> lsFile(String userId, String password) {
 		List<FileInfo> userFiles = new ArrayList<>();
-		var resultUser = getUser(userId, password);
-		if (!resultUser.isOK()) {
-			return Result.error(resultUser.error());
-		}
 		
-		for (Map.Entry<String, FileInfo> entry : files.entrySet()) {
-			FileInfo val = entry.getValue();
-			
-			if (val.getOwner().equals(userId) || val.getSharedWith().contains(userId)) {
-				userFiles.add(val);
+		synchronized (this) {
+			for (Map.Entry<String, FileInfo> entry : files.entrySet()) {
+				FileInfo val = entry.getValue();
+
+				if (val.getOwner().equals(userId) || val.getSharedWith().contains(userId)) {
+					userFiles.add(val);
+				}
+
 			}
-			
 		}
 		
 		return Result.ok(userFiles);
@@ -197,6 +155,10 @@ public class JavaDirectory implements Directory{
 		return result;
 	}
 	
+	public synchronized FileInfo getFileInfo(String fileId) {
+		return files.get(fileId);
+	}
+	
 	private URI[] getUris(String service) {
 		URI[] uris = null;
 		try {
@@ -206,38 +168,4 @@ public class JavaDirectory implements Directory{
 		} catch (Exception e) {}
 		return uris;
 	}
-	
-	private Result<User> getUser(String userId, String password) {
-		RestUsersClient ruc = new RestUsersClient(getUris("users")[0]);
-		return ruc.getUser(userId, password);
-	}
-	
-	private Result<Boolean> hasUser(String userId) {
-		RestUsersClient ruc = new RestUsersClient(getUris("users")[0]);
-		return ruc.hasUser(userId);
-	}
-	
-	private Status convertToStatus(ErrorCode error) {
-		
-		switch (error) {
-			case OK:
-				return Status.OK;
-			case BAD_REQUEST:
-				return Status.BAD_REQUEST;
-			case FORBIDDEN:
-				return Status.FORBIDDEN;
-			case CONFLICT:
-				return Status.CONFLICT;
-			case NOT_FOUND:
-				return Status.NOT_FOUND;
-			case INTERNAL_ERROR:
-				return Status.INTERNAL_SERVER_ERROR;
-			case NOT_IMPLEMENTED:
-				return Status.NOT_IMPLEMENTED;
-			default:
-				break;
-			}
-			return null;
-	}
-
 }

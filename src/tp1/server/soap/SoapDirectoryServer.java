@@ -1,6 +1,5 @@
 package tp1.server.soap;
 
-
 import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -8,10 +7,10 @@ import java.util.logging.Logger;
 import jakarta.xml.ws.Endpoint;
 import tp1.discovery.Discovery;
 
-public class SoapUsersServer {
+public class SoapDirectoryServer {
 
 	public static final int PORT = 8080;
-	public static final String SERVICE_NAME = "users";
+	public static final String SERVICE_NAME = "directory";
 	public static String SERVER_BASE_URI = "http://%s:%s/soap";
 	public static Discovery discovery;
 

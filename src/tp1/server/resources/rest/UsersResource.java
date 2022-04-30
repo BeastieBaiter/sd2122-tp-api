@@ -1,15 +1,23 @@
 package tp1.server.resources.rest;
 
+import java.net.URI;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response.Status;
+import tp1.api.FileInfo;
 import tp1.api.User;
 import tp1.api.service.java.JavaUsers;
 import tp1.api.service.rest.RestUsers;
+import tp1.api.service.util.Result;
 import tp1.api.service.util.Result.ErrorCode;
+import tp1.clients.rest.RestDirectoryClient;
+import tp1.discovery.Discovery;
+import tp1.server.rest.UsersServer;
 
 @Singleton
 public class UsersResource implements RestUsers {
@@ -17,6 +25,8 @@ public class UsersResource implements RestUsers {
 	private static Logger Log = Logger.getLogger(UsersResource.class.getName());
 	
 	private final JavaUsers impl = new JavaUsers();
+	
+	private Discovery discovery = UsersServer.discovery;
 	
 	public UsersResource() {
 	}
@@ -66,6 +76,24 @@ public class UsersResource implements RestUsers {
 	@Override
 	public User deleteUser(String userId, String password) {
 		Log.info("deleteUser : user = " + userId + "; pwd = " + password);
+		RestDirectoryClient rdc = getRestDirectoryClient();
+
+		Result<List<FileInfo>> resultListOfFiles = rdc.lsFile(userId, password);
+		System.out.println(resultListOfFiles.toString());
+
+		if (resultListOfFiles.isOK()) {
+			Iterator<FileInfo> it = resultListOfFiles.value().iterator();
+			while (it.hasNext()) {
+				FileInfo f = it.next();
+				if (f.getOwner().equals(userId)) {
+					rdc.deleteFile(f.getFilename(), userId, password);
+				} else {
+					Set<String> sharedWith = f.getSharedWith();
+					sharedWith.remove(userId);
+					f.setSharedWith(sharedWith);
+				}
+			}
+		}
 		var result = impl.deleteUser(userId, password);
 		
 		if(result.isOK()) {
@@ -103,6 +131,20 @@ public class UsersResource implements RestUsers {
 			throw new WebApplicationException(convertToStatus(result.error()));
 		}
 		
+	}
+	
+	private URI[] getUris(String service) {
+		URI[] uris = null;
+		try {
+			while(uris == null || uris.length == 0) {
+				uris = discovery.knownUrisOf(service);
+			}
+		} catch (Exception e) {}
+		return uris;
+	}
+	
+	private RestDirectoryClient getRestDirectoryClient() {
+		return new RestDirectoryClient(getUris("directory")[0]);
 	}
 	
 	private Status convertToStatus(ErrorCode error) {

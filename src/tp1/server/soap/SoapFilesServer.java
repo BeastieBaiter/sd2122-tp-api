@@ -1,19 +1,16 @@
 package tp1.server.soap;
 
-
 import java.net.InetAddress;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import jakarta.xml.ws.Endpoint;
-import tp1.discovery.Discovery;
 
-public class SoapUsersServer {
+public class SoapFilesServer {
 
 	public static final int PORT = 8080;
-	public static final String SERVICE_NAME = "users";
+	public static final String SERVICE_NAME = "files";
 	public static String SERVER_BASE_URI = "http://%s:%s/soap";
-	public static Discovery discovery;
 
 	private static Logger Log = Logger.getLogger(SoapUsersServer.class.getName());
 
@@ -32,8 +29,5 @@ public class SoapUsersServer {
 		Endpoint.publish(serverURI.replace(ip, "0.0.0.0"), new SoapUsersWebService());
 
 		Log.info(String.format("%s Soap Server ready @ %s\n", SERVICE_NAME, serverURI));
-		
-		discovery = new Discovery(SERVICE_NAME,serverURI);
-		discovery.start();
 	}
 }
